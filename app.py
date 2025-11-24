@@ -34,8 +34,14 @@ else:
     DB_NAME = os.getenv('DB_NAME', 'caregivers_db')
     DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-engine = create_engine(DATABASE_URL, echo=False)
-Session = sessionmaker(bind=engine)
+# Create engine with connection pooling for Heroku
+try:
+    engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
+    Session = sessionmaker(bind=engine)
+except Exception as e:
+    print(f"Database connection error: {e}")
+    print(f"DATABASE_URL present: {bool(os.getenv('DATABASE_URL'))}")
+    raise
 
 
 def get_session():
