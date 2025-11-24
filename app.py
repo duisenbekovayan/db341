@@ -137,7 +137,7 @@ try:
                     CREATE INDEX IF NOT EXISTS idx_user_city ON "user"(city);
                     """
                     
-                    # Execute table creation statements
+                    # Execute table creation statements one by one
                     statements = [s.strip() for s in create_tables_sql.split(';') if s.strip() and not s.strip().startswith('--')]
                     
                     for statement in statements:
@@ -146,10 +146,30 @@ try:
                                 conn.execute(text(statement))
                                 conn.commit()
                             except Exception as e:
-                                if "already exists" not in str(e).lower() and "duplicate" not in str(e).lower():
-                                    print(f"Warning creating table: {str(e)[:100]}")
+                                error_msg = str(e).lower()
+                                if "already exists" not in error_msg and "duplicate" not in error_msg:
+                                    print(f"Error creating table: {str(e)[:200]}")
+                                    # Don't stop on errors, continue creating other tables
                     
-                    print("Database tables created successfully!")
+                    # Verify all tables were created
+                    required_tables = ['user', 'caregiver', 'member', 'address', 'job', 'job_application', 'appointment']
+                    missing_tables = []
+                    for table_name in required_tables:
+                        check_query = text(f"""
+                            SELECT EXISTS (
+                                SELECT FROM information_schema.tables 
+                                WHERE table_schema = 'public' 
+                                AND table_name = '{table_name}'
+                            );
+                        """)
+                        result = conn.execute(check_query)
+                        if not result.fetchone()[0]:
+                            missing_tables.append(table_name)
+                    
+                    if missing_tables:
+                        print(f"Warning: Some tables were not created: {missing_tables}")
+                    else:
+                        print("Database tables created successfully!")
                     
                     # Insert sample data if tables are empty
                     try:
