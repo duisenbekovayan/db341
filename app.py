@@ -511,6 +511,26 @@ def index():
 @app.route('/users')
 def list_users():
     """List all users"""
+    # Ensure tables exist before proceeding
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'user'
+                );
+            """))
+            if not result.fetchone()[0]:
+                print("Tables missing in list_users. Initializing...")
+                init_db()
+    except Exception as e:
+        print(f"Error checking tables in list_users: {e}")
+        try:
+            init_db()
+        except:
+            pass
+    
     session = get_session()
     try:
         query = text("SELECT * FROM \"user\" ORDER BY user_id")
@@ -527,6 +547,26 @@ def list_users():
 @app.route('/users/create', methods=['GET', 'POST'])
 def create_user():
     """Create a new user"""
+    # Ensure tables exist before proceeding
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'user'
+                );
+            """))
+            if not result.fetchone()[0]:
+                print("Tables missing in create_user. Initializing...")
+                init_db()
+    except Exception as e:
+        print(f"Error checking tables in create_user: {e}")
+        try:
+            init_db()
+        except:
+            pass
+    
     if request.method == 'POST':
         session = get_session()
         try:
