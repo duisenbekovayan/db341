@@ -55,30 +55,13 @@ try:
                 if not result.fetchone()[0]:
                     print("Database tables not found. Creating tables...")
                     # Read and execute schema.sql
-                    with open('schema.sql', 'r') as f:
-                        schema_sql = f.read()
-                    
-                    # Split by semicolons and execute each statement
-                    statements = [s.strip() for s in schema_sql.split(';') if s.strip() and not s.strip().startswith('--')]
-                    
-                    for statement in statements:
-                        if statement:
-                            try:
-                                conn.execute(text(statement))
-                                conn.commit()
-                            except Exception as e:
-                                # Some statements might fail (like DROP IF EXISTS), that's okay
-                                if "does not exist" not in str(e).lower():
-                                    print(f"Warning: {str(e)[:100]}")
-                    
-                    print("Database tables created successfully!")
-                    
-                    # Optionally insert sample data
                     try:
-                        with open('insert_data.sql', 'r') as f:
-                            data_sql = f.read()
+                        schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
+                        with open(schema_path, 'r') as f:
+                            schema_sql = f.read()
                         
-                        statements = [s.strip() for s in data_sql.split(';') if s.strip() and not s.strip().startswith('--')]
+                        # Split by semicolons and execute each statement
+                        statements = [s.strip() for s in schema_sql.split(';') if s.strip() and not s.strip().startswith('--')]
                         
                         for statement in statements:
                             if statement:
@@ -86,18 +69,44 @@ try:
                                     conn.execute(text(statement))
                                     conn.commit()
                                 except Exception as e:
-                                    if "duplicate key" not in str(e).lower() and "already exists" not in str(e).lower():
-                                        pass  # Ignore duplicate errors
-                        print("Sample data inserted!")
+                                    # Some statements might fail (like DROP IF EXISTS), that's okay
+                                    if "does not exist" not in str(e).lower():
+                                        print(f"Warning: {str(e)[:100]}")
+                        
+                        print("Database tables created successfully!")
+                        
+                        # Optionally insert sample data
+                        try:
+                            data_path = os.path.join(os.path.dirname(__file__), 'insert_data.sql')
+                            with open(data_path, 'r') as f:
+                                data_sql = f.read()
+                            
+                            statements = [s.strip() for s in data_sql.split(';') if s.strip() and not s.strip().startswith('--')]
+                            
+                            for statement in statements:
+                                if statement:
+                                    try:
+                                        conn.execute(text(statement))
+                                        conn.commit()
+                                    except Exception as e:
+                                        if "duplicate key" not in str(e).lower() and "already exists" not in str(e).lower():
+                                            pass  # Ignore duplicate errors
+                            print("Sample data inserted!")
+                        except FileNotFoundError:
+                            print("insert_data.sql not found, skipping sample data")
+                        except Exception as e:
+                            print(f"Warning inserting data: {str(e)[:100]}")
                     except FileNotFoundError:
-                        print("insert_data.sql not found, skipping sample data")
+                        print("schema.sql not found. Please create tables manually.")
+                        print("You can run: psql $DATABASE_URL < schema.sql")
                     except Exception as e:
-                        print(f"Warning inserting data: {str(e)[:100]}")
+                        print(f"Error reading schema file: {e}")
         except Exception as e:
             print(f"Error initializing database: {e}")
     
-    # Initialize on startup
-    init_db()
+    # Initialize on startup (only in production/Heroku)
+    if os.getenv('DATABASE_URL'):
+        init_db()
     
 except Exception as e:
     print(f"Database connection error: {e}")
