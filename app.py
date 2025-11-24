@@ -167,7 +167,106 @@ try:
                             missing_tables.append(table_name)
                     
                     if missing_tables:
-                        print(f"Warning: Some tables were not created: {missing_tables}")
+                        print(f"ERROR: Some tables were not created: {missing_tables}")
+                        print("Attempting to create missing tables individually...")
+                        # Try to create missing tables individually
+                        for table_name in missing_tables:
+                            if table_name == 'caregiver':
+                                try:
+                                    conn.execute(text("""
+                                        CREATE TABLE IF NOT EXISTS caregiver (
+                                            caregiver_user_id INTEGER PRIMARY KEY,
+                                            photo VARCHAR(500),
+                                            gender VARCHAR(20) NOT NULL,
+                                            caregiving_type VARCHAR(50) NOT NULL CHECK (caregiving_type IN ('babysitter', 'elderly care', 'playmate')),
+                                            hourly_rate DECIMAL(10, 2) NOT NULL CHECK (hourly_rate > 0),
+                                            FOREIGN KEY (caregiver_user_id) REFERENCES "user"(user_id) ON DELETE CASCADE
+                                        );
+                                    """))
+                                    conn.commit()
+                                    print(f"Created table: {table_name}")
+                                except Exception as e:
+                                    print(f"Failed to create {table_name}: {e}")
+                            elif table_name == 'member':
+                                try:
+                                    conn.execute(text("""
+                                        CREATE TABLE IF NOT EXISTS member (
+                                            member_user_id INTEGER PRIMARY KEY,
+                                            house_rules TEXT,
+                                            dependent_description TEXT,
+                                            FOREIGN KEY (member_user_id) REFERENCES "user"(user_id) ON DELETE CASCADE
+                                        );
+                                    """))
+                                    conn.commit()
+                                    print(f"Created table: {table_name}")
+                                except Exception as e:
+                                    print(f"Failed to create {table_name}: {e}")
+                            elif table_name == 'address':
+                                try:
+                                    conn.execute(text("""
+                                        CREATE TABLE IF NOT EXISTS address (
+                                            member_user_id INTEGER PRIMARY KEY,
+                                            house_number VARCHAR(20) NOT NULL,
+                                            street VARCHAR(200) NOT NULL,
+                                            town VARCHAR(100) NOT NULL,
+                                            FOREIGN KEY (member_user_id) REFERENCES member(member_user_id) ON DELETE CASCADE
+                                        );
+                                    """))
+                                    conn.commit()
+                                    print(f"Created table: {table_name}")
+                                except Exception as e:
+                                    print(f"Failed to create {table_name}: {e}")
+                            elif table_name == 'job':
+                                try:
+                                    conn.execute(text("""
+                                        CREATE TABLE IF NOT EXISTS job (
+                                            job_id SERIAL PRIMARY KEY,
+                                            member_user_id INTEGER NOT NULL,
+                                            required_caregiving_type VARCHAR(50) NOT NULL CHECK (required_caregiving_type IN ('babysitter', 'elderly care', 'playmate')),
+                                            other_requirements TEXT,
+                                            date_posted DATE NOT NULL DEFAULT CURRENT_DATE,
+                                            FOREIGN KEY (member_user_id) REFERENCES member(member_user_id) ON DELETE CASCADE
+                                        );
+                                    """))
+                                    conn.commit()
+                                    print(f"Created table: {table_name}")
+                                except Exception as e:
+                                    print(f"Failed to create {table_name}: {e}")
+                            elif table_name == 'job_application':
+                                try:
+                                    conn.execute(text("""
+                                        CREATE TABLE IF NOT EXISTS job_application (
+                                            caregiver_user_id INTEGER NOT NULL,
+                                            job_id INTEGER NOT NULL,
+                                            date_applied DATE NOT NULL DEFAULT CURRENT_DATE,
+                                            PRIMARY KEY (caregiver_user_id, job_id),
+                                            FOREIGN KEY (caregiver_user_id) REFERENCES caregiver(caregiver_user_id) ON DELETE CASCADE,
+                                            FOREIGN KEY (job_id) REFERENCES job(job_id) ON DELETE CASCADE
+                                        );
+                                    """))
+                                    conn.commit()
+                                    print(f"Created table: {table_name}")
+                                except Exception as e:
+                                    print(f"Failed to create {table_name}: {e}")
+                            elif table_name == 'appointment':
+                                try:
+                                    conn.execute(text("""
+                                        CREATE TABLE IF NOT EXISTS appointment (
+                                            appointment_id SERIAL PRIMARY KEY,
+                                            caregiver_user_id INTEGER NOT NULL,
+                                            member_user_id INTEGER NOT NULL,
+                                            appointment_date DATE NOT NULL,
+                                            appointment_time TIME NOT NULL,
+                                            work_hours DECIMAL(4, 2) NOT NULL CHECK (work_hours > 0),
+                                            status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'declined')),
+                                            FOREIGN KEY (caregiver_user_id) REFERENCES caregiver(caregiver_user_id) ON DELETE CASCADE,
+                                            FOREIGN KEY (member_user_id) REFERENCES member(member_user_id) ON DELETE CASCADE
+                                        );
+                                    """))
+                                    conn.commit()
+                                    print(f"Created table: {table_name}")
+                                except Exception as e:
+                                    print(f"Failed to create {table_name}: {e}")
                     else:
                         print("Database tables created successfully!")
                     
