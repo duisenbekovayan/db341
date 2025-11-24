@@ -471,6 +471,26 @@ except Exception as e:
 
 def get_session():
     """Get a new database session"""
+    # Check if tables exist before returning session
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'user'
+                );
+            """))
+            if not result.fetchone()[0]:
+                print("Tables not found during session creation. Initializing...")
+                init_db()
+    except Exception as e:
+        print(f"Warning checking tables: {e}")
+        # Try to initialize anyway
+        try:
+            init_db()
+        except:
+            pass
     return Session()
 
 
