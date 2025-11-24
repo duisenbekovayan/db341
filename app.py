@@ -154,16 +154,20 @@ try:
                     # Execute table creation statements one by one
                     statements = [s.strip() for s in create_tables_sql.split(';') if s.strip() and not s.strip().startswith('--')]
                     
-                    for statement in statements:
+                    for i, statement in enumerate(statements):
                         if statement:
                             try:
+                                print(f"Executing statement {i+1}/{len(statements)}: {statement[:80]}...")
                                 conn.execute(text(statement))
+                                print(f"Statement {i+1} executed successfully")
                             except Exception as e:
                                 error_msg = str(e).lower()
                                 if "already exists" not in error_msg and "duplicate" not in error_msg:
-                                    print(f"Error creating table: {str(e)[:200]}")
+                                    print(f"ERROR creating table: {str(e)[:200]}")
                                     print(f"Statement was: {statement[:150]}")
                                     # Don't stop on errors, continue creating other tables
+                                else:
+                                    print(f"Statement {i+1} skipped (already exists)")
                     
                     # Verify all tables were created
                     required_tables = ['user', 'caregiver', 'member', 'address', 'job', 'job_application', 'appointment']
