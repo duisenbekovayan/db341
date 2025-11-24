@@ -54,55 +54,106 @@ try:
                 """))
                 if not result.fetchone()[0]:
                     print("Database tables not found. Creating tables...")
-                    # Read and execute schema.sql
-                    try:
-                        schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
-                        with open(schema_path, 'r') as f:
-                            schema_sql = f.read()
-                        
-                        # Split by semicolons and execute each statement
-                        statements = [s.strip() for s in schema_sql.split(';') if s.strip() and not s.strip().startswith('--')]
-                        
-                        for statement in statements:
-                            if statement:
-                                try:
-                                    conn.execute(text(statement))
-                                    conn.commit()
-                                except Exception as e:
-                                    # Some statements might fail (like DROP IF EXISTS), that's okay
-                                    if "does not exist" not in str(e).lower():
-                                        print(f"Warning: {str(e)[:100]}")
-                        
-                        print("Database tables created successfully!")
-                        
-                        # Optionally insert sample data
-                        try:
-                            data_path = os.path.join(os.path.dirname(__file__), 'insert_data.sql')
-                            with open(data_path, 'r') as f:
-                                data_sql = f.read()
-                            
-                            statements = [s.strip() for s in data_sql.split(';') if s.strip() and not s.strip().startswith('--')]
-                            
-                            for statement in statements:
-                                if statement:
-                                    try:
-                                        conn.execute(text(statement))
-                                        conn.commit()
-                                    except Exception as e:
-                                        if "duplicate key" not in str(e).lower() and "already exists" not in str(e).lower():
-                                            pass  # Ignore duplicate errors
-                            print("Sample data inserted!")
-                        except FileNotFoundError:
-                            print("insert_data.sql not found, skipping sample data")
-                        except Exception as e:
-                            print(f"Warning inserting data: {str(e)[:100]}")
-                    except FileNotFoundError:
-                        print("schema.sql not found. Please create tables manually.")
-                        print("You can run: psql $DATABASE_URL < schema.sql")
-                    except Exception as e:
-                        print(f"Error reading schema file: {e}")
+                    
+                    # Create tables - SQL embedded in code
+                    create_tables_sql = """
+                    -- Create USER table
+                    CREATE TABLE IF NOT EXISTS "user" (
+                        user_id SERIAL PRIMARY KEY,
+                        email VARCHAR(255) UNIQUE NOT NULL,
+                        given_name VARCHAR(100) NOT NULL,
+                        surname VARCHAR(100) NOT NULL,
+                        city VARCHAR(100) NOT NULL,
+                        phone_number VARCHAR(20) NOT NULL,
+                        profile_description TEXT,
+                        password VARCHAR(255) NOT NULL
+                    );
+                    
+                    -- Create CAREGIVER table
+                    CREATE TABLE IF NOT EXISTS caregiver (
+                        caregiver_user_id INTEGER PRIMARY KEY,
+                        photo VARCHAR(500),
+                        gender VARCHAR(20) NOT NULL,
+                        caregiving_type VARCHAR(50) NOT NULL CHECK (caregiving_type IN ('babysitter', 'elderly care', 'playmate')),
+                        hourly_rate DECIMAL(10, 2) NOT NULL CHECK (hourly_rate > 0),
+                        FOREIGN KEY (caregiver_user_id) REFERENCES "user"(user_id) ON DELETE CASCADE
+                    );
+                    
+                    -- Create MEMBER table
+                    CREATE TABLE IF NOT EXISTS member (
+                        member_user_id INTEGER PRIMARY KEY,
+                        house_rules TEXT,
+                        dependent_description TEXT,
+                        FOREIGN KEY (member_user_id) REFERENCES "user"(user_id) ON DELETE CASCADE
+                    );
+                    
+                    -- Create ADDRESS table
+                    CREATE TABLE IF NOT EXISTS address (
+                        member_user_id INTEGER PRIMARY KEY,
+                        house_number VARCHAR(20) NOT NULL,
+                        street VARCHAR(200) NOT NULL,
+                        town VARCHAR(100) NOT NULL,
+                        FOREIGN KEY (member_user_id) REFERENCES member(member_user_id) ON DELETE CASCADE
+                    );
+                    
+                    -- Create JOB table
+                    CREATE TABLE IF NOT EXISTS job (
+                        job_id SERIAL PRIMARY KEY,
+                        member_user_id INTEGER NOT NULL,
+                        required_caregiving_type VARCHAR(50) NOT NULL CHECK (required_caregiving_type IN ('babysitter', 'elderly care', 'playmate')),
+                        other_requirements TEXT,
+                        date_posted DATE NOT NULL DEFAULT CURRENT_DATE,
+                        FOREIGN KEY (member_user_id) REFERENCES member(member_user_id) ON DELETE CASCADE
+                    );
+                    
+                    -- Create JOB_APPLICATION table
+                    CREATE TABLE IF NOT EXISTS job_application (
+                        caregiver_user_id INTEGER NOT NULL,
+                        job_id INTEGER NOT NULL,
+                        date_applied DATE NOT NULL DEFAULT CURRENT_DATE,
+                        PRIMARY KEY (caregiver_user_id, job_id),
+                        FOREIGN KEY (caregiver_user_id) REFERENCES caregiver(caregiver_user_id) ON DELETE CASCADE,
+                        FOREIGN KEY (job_id) REFERENCES job(job_id) ON DELETE CASCADE
+                    );
+                    
+                    -- Create APPOINTMENT table
+                    CREATE TABLE IF NOT EXISTS appointment (
+                        appointment_id SERIAL PRIMARY KEY,
+                        caregiver_user_id INTEGER NOT NULL,
+                        member_user_id INTEGER NOT NULL,
+                        appointment_date DATE NOT NULL,
+                        appointment_time TIME NOT NULL,
+                        work_hours DECIMAL(4, 2) NOT NULL CHECK (work_hours > 0),
+                        status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'declined')),
+                        FOREIGN KEY (caregiver_user_id) REFERENCES caregiver(caregiver_user_id) ON DELETE CASCADE,
+                        FOREIGN KEY (member_user_id) REFERENCES member(member_user_id) ON DELETE CASCADE
+                    );
+                    
+                    -- Create indexes
+                    CREATE INDEX IF NOT EXISTS idx_caregiver_type ON caregiver(caregiving_type);
+                    CREATE INDEX IF NOT EXISTS idx_job_type ON job(required_caregiving_type);
+                    CREATE INDEX IF NOT EXISTS idx_appointment_status ON appointment(status);
+                    CREATE INDEX IF NOT EXISTS idx_appointment_date ON appointment(appointment_date);
+                    CREATE INDEX IF NOT EXISTS idx_user_city ON "user"(city);
+                    """
+                    
+                    # Execute table creation statements
+                    statements = [s.strip() for s in create_tables_sql.split(';') if s.strip() and not s.strip().startswith('--')]
+                    
+                    for statement in statements:
+                        if statement:
+                            try:
+                                conn.execute(text(statement))
+                                conn.commit()
+                            except Exception as e:
+                                if "already exists" not in str(e).lower() and "duplicate" not in str(e).lower():
+                                    print(f"Warning creating table: {str(e)[:100]}")
+                    
+                    print("Database tables created successfully!")
         except Exception as e:
             print(f"Error initializing database: {e}")
+            import traceback
+            traceback.print_exc()
     
     # Initialize on startup (only in production/Heroku)
     if os.getenv('DATABASE_URL'):
