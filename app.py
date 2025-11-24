@@ -17,8 +17,14 @@ app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
 
 # Database connection configuration
 # Heroku provides DATABASE_URL automatically for PostgreSQL addons
-if os.getenv('DATABASE_URL'):
-    DATABASE_URL = os.getenv('DATABASE_URL')
+# Heroku uses postgres:// but SQLAlchemy needs postgresql://
+database_url = os.getenv('DATABASE_URL')
+if database_url:
+    # Fix for Heroku: replace postgres:// with postgresql://
+    if database_url.startswith('postgres://'):
+        DATABASE_URL = database_url.replace('postgres://', 'postgresql://', 1)
+    else:
+        DATABASE_URL = database_url
 else:
     # Local development configuration
     DB_USER = os.getenv('DB_USER', 'postgres')
