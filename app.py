@@ -43,16 +43,24 @@ try:
     def init_db():
         """Initialize database tables if they don't exist"""
         try:
-            with engine.connect() as conn:
+            # Use begin() to ensure transaction
+            with engine.begin() as conn:
                 # Check if user table exists
-                result = conn.execute(text("""
-                    SELECT EXISTS (
-                        SELECT FROM information_schema.tables 
-                        WHERE table_schema = 'public' 
-                        AND table_name = 'user'
-                    );
-                """))
-                if not result.fetchone()[0]:
+                try:
+                    result = conn.execute(text("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables 
+                            WHERE table_schema = 'public' 
+                            AND table_name = 'user'
+                        );
+                    """))
+                    table_exists = result.fetchone()[0]
+                except Exception as e:
+                    # If we can't check, assume tables don't exist
+                    print(f"Could not check if tables exist: {e}")
+                    table_exists = False
+                
+                if not table_exists:
                     print("Database tables not found. Creating tables...")
                     
                     # Create tables - SQL embedded in code
@@ -144,11 +152,11 @@ try:
                         if statement:
                             try:
                                 conn.execute(text(statement))
-                                conn.commit()
                             except Exception as e:
                                 error_msg = str(e).lower()
                                 if "already exists" not in error_msg and "duplicate" not in error_msg:
                                     print(f"Error creating table: {str(e)[:200]}")
+                                    print(f"Statement was: {statement[:150]}")
                                     # Don't stop on errors, continue creating other tables
                     
                     # Verify all tables were created
@@ -441,9 +449,15 @@ try:
             import traceback
             traceback.print_exc()
     
-    # Initialize on startup (only in production/Heroku)
-    if os.getenv('DATABASE_URL'):
+    # Initialize on startup (always, but only create tables if they don't exist)
+    # This ensures tables are created on Heroku
+    try:
         init_db()
+    except Exception as e:
+        print(f"Warning: Could not initialize database on startup: {e}")
+        import traceback
+        traceback.print_exc()
+        # Don't fail the app startup, but log the error
     
 except Exception as e:
     print(f"Database connection error: {e}")
