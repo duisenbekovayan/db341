@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Update Member - Online Caregivers Platform{% endblock %}
+
+{% block content %}
+<h2>Update Member</h2>
+<form method="POST">
+    <div class="form-group">
+        <label>Email:</label>
+        <input type="email" name="email" value="{{ member.email }}" required>
+    </div>
+    <div class="form-group">
+        <label>Given Name:</label>
+        <input type="text" name="given_name" value="{{ member.given_name }}" required>
+    </div>
+    <div class="form-group">
+        <label>Surname:</label>
+        <input type="text" name="surname" value="{{ member.surname }}" required>
+    </div>
+    <div class="form-group">
+        <label>City:</label>
+        <input type="text" name="city" value="{{ member.city }}" required>
+    </div>
+    <div class="form-group">
+        <label>Phone Number:</label>
+        <input type="text" name="phone_number" value="{{ member.phone_number }}" required>
+    </div>
+    <div class="form-group">
+        <label>Profile Description:</label>
+        <textarea name="profile_description">{{ member.profile_description or '' }}</textarea>
+    </div>
+    <div class="form-group">
+        <label>Password:</label>
+        <input type="password" name="password" value="{{ member.password }}" required>
+    </div>
+    <div class="form-group">
+        <label>House Rules:</label>
+        <textarea name="house_rules">{{ member.house_rules or '' }}</textarea>
+    </div>
+    <div class="form-group">
+        <label>Dependent Description:</label>
+        <textarea name="dependent_description">{{ member.dependent_description or '' }}</textarea>
+    </div>
+    <div class="actions">
+        <button type="submit" class="btn btn-success">Update</button>
+        <a href="{{ url_for('list_members') }}" class="btn">Cancel</a>
+    </div>
+</form>
+{% endblock %}
+

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Users - Online Caregivers Platform{% endblock %}
+
+{% block content %}
+<h2>Users</h2>
+<a href="{{ url_for('create_user') }}" class="btn btn-success">Create New User</a>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Email</th>
+            <th>Name</th>
+            <th>City</th>
+            <th>Phone</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.user_id }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.given_name }} {{ user.surname }}</td>
+            <td>{{ user.city }}</td>
+            <td>{{ user.phone_number }}</td>
+            <td>
+                <a href="{{ url_for('update_user', user_id=user.user_id) }}" class="btn">Update</a>
+                <form method="POST" action="{{ url_for('delete_user', user_id=user.user_id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+

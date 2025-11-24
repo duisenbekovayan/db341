@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Create Job - Online Caregivers Platform{% endblock %}
+
+{% block content %}
+<h2>Create New Job</h2>
+<form method="POST">
+    <div class="form-group">
+        <label>Member:</label>
+        <select name="member_user_id" required>
+            <option value="">Select a member</option>
+            {% for member in members %}
+            <option value="{{ member.member_user_id }}">{{ member.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Required Caregiving Type:</label>
+        <select name="required_caregiving_type" required>
+            <option value="babysitter">Babysitter</option>
+            <option value="elderly care">Elderly Care</option>
+            <option value="playmate">Playmate</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Other Requirements:</label>
+        <textarea name="other_requirements"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Date Posted:</label>
+        <input type="date" name="date_posted">
+    </div>
+    <div class="actions">
+        <button type="submit" class="btn btn-success">Create</button>
+        <a href="{{ url_for('list_jobs') }}" class="btn">Cancel</a>
+    </div>
+</form>
+{% endblock %}
+

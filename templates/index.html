@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Online Caregivers Platform{% endblock %}
+
+{% block content %}
+<h2>Welcome to the Online Caregivers Platform</h2>
+<p>This platform provides comprehensive database management for caregivers, members, jobs, and appointments.</p>
+
+<div style="margin-top: 30px;">
+    <h3>Available Operations:</h3>
+    <ul style="list-style: none; padding: 0;">
+        <li style="margin: 10px 0;">
+            <a href="{{ url_for('list_users') }}" class="btn">Manage Users</a>
+        </li>
+        <li style="margin: 10px 0;">
+            <a href="{{ url_for('list_caregivers') }}" class="btn">Manage Caregivers</a>
+        </li>
+        <li style="margin: 10px 0;">
+            <a href="{{ url_for('list_members') }}" class="btn">Manage Members</a>
+        </li>
+        <li style="margin: 10px 0;">
+            <a href="{{ url_for('list_addresses') }}" class="btn">Manage Addresses</a>
+        </li>
+        <li style="margin: 10px 0;">
+            <a href="{{ url_for('list_jobs') }}" class="btn">Manage Jobs</a>
+        </li>
+        <li style="margin: 10px 0;">
+            <a href="{{ url_for('list_job_applications') }}" class="btn">Manage Job Applications</a>
+        </li>
+        <li style="margin: 10px 0;">
+            <a href="{{ url_for('list_appointments') }}" class="btn">Manage Appointments</a>
+        </li>
+    </ul>
+</div>
+{% endblock %}
+

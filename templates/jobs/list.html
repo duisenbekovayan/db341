@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Jobs - Online Caregivers Platform{% endblock %}
+
+{% block content %}
+<h2>Jobs</h2>
+<a href="{{ url_for('create_job') }}" class="btn btn-success">Create New Job</a>
+
+<table>
+    <thead>
+        <tr>
+            <th>Job ID</th>
+            <th>Member</th>
+            <th>Caregiving Type</th>
+            <th>Other Requirements</th>
+            <th>Date Posted</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for job in jobs %}
+        <tr>
+            <td>{{ job.job_id }}</td>
+            <td>{{ job.member_name }}</td>
+            <td>{{ job.required_caregiving_type }}</td>
+            <td>{{ job.other_requirements or '-' }}</td>
+            <td>{{ job.date_posted }}</td>
+            <td>
+                <a href="{{ url_for('update_job', job_id=job.job_id) }}" class="btn">Update</a>
+                <form method="POST" action="{{ url_for('delete_job', job_id=job.job_id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+

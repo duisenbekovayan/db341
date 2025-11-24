@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Update Job - Online Caregivers Platform{% endblock %}
+
+{% block content %}
+<h2>Update Job</h2>
+<form method="POST">
+    <div class="form-group">
+        <label>Member:</label>
+        <select name="member_user_id" required>
+            {% for member in members %}
+            <option value="{{ member.member_user_id }}" {% if member.member_user_id == job.member_user_id %}selected{% endif %}>{{ member.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Required Caregiving Type:</label>
+        <select name="required_caregiving_type" required>
+            <option value="babysitter" {% if job.required_caregiving_type == 'babysitter' %}selected{% endif %}>Babysitter</option>
+            <option value="elderly care" {% if job.required_caregiving_type == 'elderly care' %}selected{% endif %}>Elderly Care</option>
+            <option value="playmate" {% if job.required_caregiving_type == 'playmate' %}selected{% endif %}>Playmate</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Other Requirements:</label>
+        <textarea name="other_requirements">{{ job.other_requirements or '' }}</textarea>
+    </div>
+    <div class="form-group">
+        <label>Date Posted:</label>
+        <input type="date" name="date_posted" value="{{ job.date_posted }}">
+    </div>
+    <div class="actions">
+        <button type="submit" class="btn btn-success">Update</button>
+        <a href="{{ url_for('list_jobs') }}" class="btn">Cancel</a>
+    </div>
+</form>
+{% endblock %}
+

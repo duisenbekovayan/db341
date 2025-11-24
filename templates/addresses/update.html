@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Update Address - Online Caregivers Platform{% endblock %}
+
+{% block content %}
+<h2>Update Address</h2>
+<form method="POST">
+    <div class="form-group">
+        <label>House Number:</label>
+        <input type="text" name="house_number" value="{{ address.house_number }}" required>
+    </div>
+    <div class="form-group">
+        <label>Street:</label>
+        <input type="text" name="street" value="{{ address.street }}" required>
+    </div>
+    <div class="form-group">
+        <label>Town:</label>
+        <input type="text" name="town" value="{{ address.town }}" required>
+    </div>
+    <div class="actions">
+        <button type="submit" class="btn btn-success">Update</button>
+        <a href="{{ url_for('list_addresses') }}" class="btn">Cancel</a>
+    </div>
+</form>
+{% endblock %}
+

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Caregivers - Online Caregivers Platform{% endblock %}
+
+{% block content %}
+<h2>Caregivers</h2>
+<a href="{{ url_for('create_caregiver') }}" class="btn btn-success">Create New Caregiver</a>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Gender</th>
+            <th>Hourly Rate</th>
+            <th>City</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for caregiver in caregivers %}
+        <tr>
+            <td>{{ caregiver.caregiver_user_id }}</td>
+            <td>{{ caregiver.given_name }} {{ caregiver.surname }}</td>
+            <td>{{ caregiver.caregiving_type }}</td>
+            <td>{{ caregiver.gender }}</td>
+            <td>${{ "%.2f"|format(caregiver.hourly_rate) }}</td>
+            <td>{{ caregiver.city }}</td>
+            <td>
+                <a href="{{ url_for('update_caregiver', caregiver_id=caregiver.caregiver_user_id) }}" class="btn">Update</a>
+                <form method="POST" action="{{ url_for('delete_caregiver', caregiver_id=caregiver.caregiver_user_id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
