@@ -38,6 +38,67 @@ else:
 try:
     engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
     Session = sessionmaker(bind=engine)
+    
+    # Auto-initialize database if tables don't exist
+    def init_db():
+        """Initialize database tables if they don't exist"""
+        try:
+            with engine.connect() as conn:
+                # Check if user table exists
+                result = conn.execute(text("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        AND table_name = 'user'
+                    );
+                """))
+                if not result.fetchone()[0]:
+                    print("Database tables not found. Creating tables...")
+                    # Read and execute schema.sql
+                    with open('schema.sql', 'r') as f:
+                        schema_sql = f.read()
+                    
+                    # Split by semicolons and execute each statement
+                    statements = [s.strip() for s in schema_sql.split(';') if s.strip() and not s.strip().startswith('--')]
+                    
+                    for statement in statements:
+                        if statement:
+                            try:
+                                conn.execute(text(statement))
+                                conn.commit()
+                            except Exception as e:
+                                # Some statements might fail (like DROP IF EXISTS), that's okay
+                                if "does not exist" not in str(e).lower():
+                                    print(f"Warning: {str(e)[:100]}")
+                    
+                    print("Database tables created successfully!")
+                    
+                    # Optionally insert sample data
+                    try:
+                        with open('insert_data.sql', 'r') as f:
+                            data_sql = f.read()
+                        
+                        statements = [s.strip() for s in data_sql.split(';') if s.strip() and not s.strip().startswith('--')]
+                        
+                        for statement in statements:
+                            if statement:
+                                try:
+                                    conn.execute(text(statement))
+                                    conn.commit()
+                                except Exception as e:
+                                    if "duplicate key" not in str(e).lower() and "already exists" not in str(e).lower():
+                                        pass  # Ignore duplicate errors
+                        print("Sample data inserted!")
+                    except FileNotFoundError:
+                        print("insert_data.sql not found, skipping sample data")
+                    except Exception as e:
+                        print(f"Warning inserting data: {str(e)[:100]}")
+        except Exception as e:
+            print(f"Error initializing database: {e}")
+    
+    # Initialize on startup
+    init_db()
+    
 except Exception as e:
     print(f"Database connection error: {e}")
     print(f"DATABASE_URL present: {bool(os.getenv('DATABASE_URL'))}")
