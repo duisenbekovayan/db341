@@ -65,7 +65,7 @@ try:
                 print("Creating tables...")
                 # Use autocommit mode for DDL statements
                 with engine.connect() as conn:
-                    # Set autocommit for DDL
+                    # DDL statements need to be committed immediately
                     conn = conn.execution_options(autocommit=True)
                     print("Database tables not found. Creating tables...")
                     
