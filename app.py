@@ -451,13 +451,17 @@ try:
     
     # Initialize on startup (always, but only create tables if they don't exist)
     # This ensures tables are created on Heroku
+    print("Starting database initialization...")
     try:
         init_db()
+        print("Database initialization completed.")
     except Exception as e:
-        print(f"Warning: Could not initialize database on startup: {e}")
+        print(f"ERROR: Could not initialize database on startup: {e}")
         import traceback
         traceback.print_exc()
         # Don't fail the app startup, but log the error
+        # Try to initialize again on first request
+        print("Will retry initialization on first database access...")
     
 except Exception as e:
     print(f"Database connection error: {e}")
