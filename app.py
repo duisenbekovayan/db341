@@ -42,12 +42,12 @@ try:
     # Auto-initialize database if tables don't exist
     def init_db():
         """Initialize database tables if they don't exist"""
+        print("=== INIT_DB CALLED ===")
         try:
-            # Use begin() to ensure transaction
-            with engine.begin() as conn:
-                # Check if user table exists
+            # Check if user table exists first
+            with engine.connect() as check_conn:
                 try:
-                    result = conn.execute(text("""
+                    result = check_conn.execute(text("""
                         SELECT EXISTS (
                             SELECT FROM information_schema.tables 
                             WHERE table_schema = 'public' 
@@ -55,12 +55,18 @@ try:
                         );
                     """))
                     table_exists = result.fetchone()[0]
+                    print(f"Table 'user' exists: {table_exists}")
                 except Exception as e:
                     # If we can't check, assume tables don't exist
                     print(f"Could not check if tables exist: {e}")
                     table_exists = False
-                
-                if not table_exists:
+            
+            if not table_exists:
+                print("Creating tables...")
+                # Use autocommit mode for DDL statements
+                with engine.connect() as conn:
+                    # Set autocommit for DDL
+                    conn = conn.execution_options(autocommit=True)
                     print("Database tables not found. Creating tables...")
                     
                     # Create tables - SQL embedded in code
